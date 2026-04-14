@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Smart Lost & Found | NIT Silchar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col items-center p-8">
+    <nav class="w-full bg-blue-800 p-4 text-white flex justify-center space-x-8 mb-8 shadow-lg">
+    <a href="#" onclick="showPage('report')" class="hover:underline font-semibold">Report Product</a>
+    <a href="#" onclick="showPage('status')" class="hover:underline font-semibold">Status Board</a>
+</nav>
+
+<div id="reportPage" class="flex flex-col items-center px-4">
+    <h1 class="text-3xl font-bold text-blue-800 mb-8">Lost & Found/NIT Silchar</h1>
+
+    <div class="bg-white p-6 rounded-lg shadow-md w-full max-w-md">
+        <h2 class="text-xl font-semibold mb-4">Report a Product</h2>
+        
+        <form id="itemForm" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Product Name</label>
+                <input type="text" id="title" placeholder="e.g. Blue Dell Laptop" 
+                    class="w-full border p-2 rounded-md focus:ring-2 focus:ring-blue-500 outline-none" required>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Category</label>
+                <select id="category" class="w-full border p-2 rounded-md outline-none" required>
+                    <option value="">Select a category</option>
+                    <option value="Electronics">Electronics</option>
+                    <option value="Keys">Keys</option>
+                    <option value="Wallet">Wallet/Bags</option>
+                    <option value="Documents">Documents/ID Cards</option>
+                    <option value="General products">General Products</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Location</label>
+                <input type="text" id="location" placeholder="e.g.Gymkhana Park" 
+                    class="w-full border p-2 rounded-md outline-none" required>
+            </div>
+             <div>
+                <label class="block text-sm font-medium text-gray-700">Date</label>
+                <input type="date" id="date"  
+                    class="w-full border p-2 rounded-md outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+                         <div>
+                <label class="block text-sm font-medium text-gray-700">Approximate Time</label>
+                <input type="time" id="time"  
+                    class="w-full border p-2 rounded-md outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+                <label class=""block text-sm font-medium text-gray-700>Upload Image</label>
+                <input type="file" id="itemimage" accept="image/*" class="w-full border p-2 rounded-md outline-none cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Product Status</label>
+                <select id="type" class="w-full border p-2 rounded-md outline-none" required>
+                    <option value="lost">Lost this product</option>
+                    <option value="found">Found this product</option>
+                </select>
+            </div>
+
+            <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition">
+                Submit Report
+            </button>
+        </form>
+    </div>
+    </div>
+      <div id="statusPage" class="hidden w-full max-w-6xl mx-auto px-4">
+        <h2 class="text-2xl font-bold text-center text-gray-800 mb-8">Campus Status Board</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div>
+                <h3 class="text-xl font-bold text-red-700 mb-4 border-b-2 border-red-200">Lost Product</h3>
+                <div id="lostList" class="space-y-4">
+                    <p class="text-gray-500 italic">No lost products reported yet.</p>
+                </div>
+            </div>
+
+            <div>
+                <h3 class="text-xl font-bold text-green-700 mb-4 border-b-2 border-green-200">Found Products</h3>
+                <div id="foundList" class="space-y-4">
+                    <p class="text-gray-500 italic">No found products reported yet.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showPage(pageId) {
+            const reportPage = document.getElementById('reportPage');
+            const statusPage = document.getElementById('statusPage');
+
+            if (pageId === 'report') {
+                reportPage.classList.remove('hidden');
+                statusPage.classList.add('hidden');
+            } else {
+                statusPage.classList.remove('hidden');
+                reportPage.classList.add('hidden');
+            }
+        }
+    </script>
+   <div id="itemModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl max-w-md w-full p-8 shadow-2xl relative animate-in fade-in zoom-in duration-300">
+            <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-400 hover:text-black text-2xl font-bold">&times;</button>
+            <div id="modalContent"></div>
+        </div>
+    </div>
+<script>
+        
+        let items = [];
+
+        
+        function showPage(pageId) {
+            const reportPage = document.getElementById('reportPage');
+            const statusPage = document.getElementById('statusPage');
+
+            if (pageId === 'report') {
+                reportPage.classList.remove('hidden');
+                statusPage.classList.add('hidden');
+            } else {
+                statusPage.classList.remove('hidden');
+                reportPage.classList.add('hidden');
+                renderItems(); 
+            }
+        }
+
+        
+        const itemForm = document.getElementById('itemForm');
+        itemForm.addEventListener('submit', function(e) {
+            e.preventDefault(); 
+
+            const newItem = {
+                title: document.getElementById('title').value,
+                category: document.getElementById('category').value,
+                location: document.getElementById('location').value,
+                type: document.getElementById('type').value, 
+                date: document.getElementById('date').value,
+                time: document.getElementById('time').value,
+                status: document.getElementById('type').value === 'lost' ? 'Searching...' : 'Pending Claim'
+            };
+
+            items.push(newItem);
+            alert("Report submitted successfully!");
+            itemForm.reset();
+            showPage('status'); 
+        });
+
+
+    
+        function renderItems() {
+            const lostList = document.getElementById('lostList');
+            const foundList = document.getElementById('foundList');
+
+            lostList.innerHTML = '';
+            foundList.innerHTML = '';
+
+            if (items.length === 0) {
+                lostList.innerHTML = '<p class="text-gray-500 italic">No lost items reported yet.</p>';
+                foundList.innerHTML = '<p class="text-gray-500 italic">No found items reported yet.</p>';
+                return;
+            }
+
+            items.forEach(item => {
+                const cardColor = item.type === 'lost' ? 'border-red-500' : 'border-green-500';
+                const statusColor = item.type === 'lost' ? 'text-orange-600' : 'text-green-600';
+
+                const cardHTML = `
+                    <div class="bg-white p-4 rounded shadow border-l-4 ${cardColor} mb-4">
+                        <div class="flex justify-between items-start">
+                            <h4 class="font-bold text-gray-800">${item.title}</h4>
+                            <span class="text-[10px] px-2 py-1 rounded bg-gray-100 font-bold uppercase">${item.category}</span>
+                        </div>
+                        <p class="text-sm text-gray-600 mt-1">📍 ${item.location}</p>
+                        <div class="flex gap-4 mt-2 text-[10px] text-gray-400">
+                            <span>📅 ${item.date}</span>
+                            <span>⏰ ${item.time}</span>
+                        </div>
+                        <p class="mt-3 text-sm font-semibold ${statusColor}">Status: ${item.status}</p>
+                    </div>
+                `;
+
+                if (item.type === 'lost') {
+                    lostList.innerHTML += cardHTML;
+                } else {
+                    foundList.innerHTML += cardHTML;
+                }
+            });
+        }
+
+                       
+
+    </script>
+</body>
+</html>
