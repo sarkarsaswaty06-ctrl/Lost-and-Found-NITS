@@ -26,6 +26,7 @@
                     class="w-full border p-2 rounded-md focus:ring-2 focus:ring-blue-500 outline-none" required>
             </div>
 
+
             <div>
                 <label class="block text-sm font-medium text-gray-700">Category</label>
                 <select id="category" class="w-full border p-2 rounded-md outline-none" required>
@@ -134,133 +135,136 @@
         
         let items = [];
 
-        
-        function showPage(pageId) {
-            const reportPage = document.getElementById('reportPage');
-            const statusPage = document.getElementById('statusPage');
+    
+    function showPage(pageId) {
+        const reportPage = document.getElementById('reportPage');
+        const statusPage = document.getElementById('statusPage');
 
-            if (pageId === 'report') {
-                reportPage.classList.remove('hidden');
-                statusPage.classList.add('hidden');
-            } else {
-                statusPage.classList.remove('hidden');
-                reportPage.classList.add('hidden');
-                renderItems(); 
-            }
+        if (pageId === 'report') {
+            reportPage.classList.remove('hidden');
+            statusPage.classList.add('hidden');
+        } else {
+            statusPage.classList.remove('hidden');
+            reportPage.classList.add('hidden');
+            renderItems(); 
+        }
+    }
+
+    const itemForm = document.getElementById('itemForm');
+    itemForm.addEventListener('submit', function(e) {
+        e.preventDefault(); 
+
+        // 1. CAPTURE THE IMAGE FILE
+        const imageInput = document.getElementById('itemimage');
+        let imageURL = "";
+        if (imageInput.files && imageInput.files[0]) {
+            // Create a temporary local URL for the image
+            imageURL = URL.createObjectURL(imageInput.files[0]);
         }
 
-        
-        const itemForm = document.getElementById('itemForm');
-        itemForm.addEventListener('submit', function(e) {
-            e.preventDefault(); 
+        const newItem = {
+            title: document.getElementById('title').value,
+            category: document.getElementById('category').value,
+            location: document.getElementById('location').value,
+            type: document.getElementById('type').value, 
+            date: document.getElementById('date').value,
+            time: document.getElementById('time').value,
+            contact: document.getElementById('itemContact').value,
+            image: imageURL, // Store the image URL
+            status: document.getElementById('type').value === 'lost' ? 'Searching...' : 'Pending Claim'
+        };
 
-            const newItem = {
-                title: document.getElementById('title').value,
-                category: document.getElementById('category').value,
-                location: document.getElementById('location').value,
-                type: document.getElementById('type').value, 
-                date: document.getElementById('date').value,
-                time: document.getElementById('time').value,
-                 contact: document.getElementById('itemContact').value,
-                status: document.getElementById('type').value === 'lost' ? 'Searching...' : 'Pending Claim'
-            };
 
-            items.push(newItem);
-          
-    const isMatch = items.some(existingItem => {
-
-        const oppositeType = existingItem.type !== newItem.type;
-        
+        items.push(newItem);
       
-        const titleMatch = existingItem.title.toLowerCase().includes(newItem.title.toLowerCase()) || 
-                           newItem.title.toLowerCase().includes(existingItem.title.toLowerCase());
-        
-       
-        const locationMatch = existingItem.location.toLowerCase() === newItem.location.toLowerCase();
-
-        return oppositeType && (titleMatch || locationMatch);
-    });
-
-    if (isMatch) {
-        alert("🔍 SMART MATCH FOUND!\nSomeone has already reported a similar item. Check the Status Board!");
-    }
-    
-         alert("Report submitted successfully!");
-            itemForm.reset();
-            showPage('status'); 
-
+        const isMatch = items.some(existingItem => {
+            const oppositeType = existingItem.type !== newItem.type;
+            const titleMatch = existingItem.title.toLowerCase().includes(newItem.title.toLowerCase()) || 
+                               newItem.title.toLowerCase().includes(existingItem.title.toLowerCase());
+            return oppositeType && titleMatch;
         });
-         
-        function filterItems() {
-    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-    const categoryTerm = document.getElementById('filterCategory').value;
 
-    
-    const allCards = document.querySelectorAll('#lostList > div, #foundList > div');
+        if (isMatch) {
+            alert("🔍 SMART MATCH FOUND!\nSomeone has already reported a similar item. Check the Status Board!");
+        }
+        
+        alert("Report submitted successfully!");
+        itemForm.reset();
+        showPage('status'); 
+    });
+     
+    function filterItems() {
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        const categoryTerm = document.getElementById('filterCategory').value;
+        const allCards = document.querySelectorAll('#lostList > div, #foundList > div');
 
-    allCards.forEach(card => {
-        
-        const cardText = card.innerText.toLowerCase();
-        
+        allCards.forEach(card => {
+            const cardText = card.innerText.toLowerCase();
+            const matchesSearch = cardText.includes(searchTerm);
+            const categoryTag = card.querySelector('.category-tag').innerText;
+            const matchesCategory = categoryTerm === 'all' || categoryTag === categoryTerm.toUpperCase();
 
-        const matchesSearch = cardText.includes(searchTerm);
-        
-        
-        const categoryTag = card.querySelector('span').innerText;
-        const matchesCategory = categoryTerm === 'all' || categoryTag === categoryTerm.toUpperCase();
+            card.style.display = (matchesSearch && matchesCategory) ? "block" : "none";
+        });
+    }
 
-        
-        if (matchesSearch && matchesCategory) {
-            card.style.display = "block";
+    function renderItems() {
+    const lostList = document.getElementById('lostList');
+    const foundList = document.getElementById('foundList');
+
+    lostList.innerHTML = '';
+    foundList.innerHTML = '';
+
+    if (items.length === 0) {
+        lostList.innerHTML = '<p class="text-gray-500 italic text-center">No lost items reported.</p>';
+        foundList.innerHTML = '<p class="text-gray-500 italic text-center">No found items reported.</p>';
+        return;
+    }
+
+    items.forEach(item => {
+        const cardColor = item.type === 'lost' ? 'border-red-500' : 'border-green-500';
+        const statusColor = item.type === 'lost' ? 'text-orange-600' : 'text-green-600';
+
+
+        // This part handles the image display
+        let imageHTML = '';
+        if (item.image) {
+            imageHTML = `<img src="${item.image}" class="w-full h-48 object-cover rounded-lg mb-3 shadow-sm" alt="Product Image">`;
         } else {
-            card.style.display = "none";
+            imageHTML = `<div class="w-full h-24 bg-gray-100 flex items-center justify-center rounded-lg mb-3 text-gray-400 text-xs">No Image Provided</div>`;
+        }
+
+        const cardHTML = `
+            <div class="bg-white p-4 rounded-xl shadow-md border-l-4 ${cardColor} mb-4 transition-all hover:scale-[1.01]">
+                ${imageHTML}
+                <div class="flex justify-between items-start">
+                    <h4 class="font-bold text-gray-800 text-lg">${item.title}</h4>
+                    <span class="category-tag text-[10px] px-2 py-1 rounded bg-blue-50 text-blue-700 font-bold uppercase">${item.category}</span>
+                </div>
+                <p class="text-sm text-gray-600 mt-1">📍 ${item.location}</p>
+                <p class="text-sm text-blue-600 mt-2 font-semibold">📞 ${item.contact}</p>
+                <div class="flex gap-4 mt-2 text-[10px] text-gray-400 border-t pt-2">
+                    <span>📅 ${item.date || 'N/A'}</span>
+                    <span>⏰ ${item.time || 'N/A'}</span>
+                </div>
+                <p class="mt-3 text-sm font-bold ${statusColor}">Status: ${item.status}</p>
+            </div>
+            `;
+           
+        
+        
+
+        if (item.type === 'lost') {
+            lostList.innerHTML += cardHTML;
+        } else {
+            foundList.innerHTML += cardHTML;
         }
     });
 }
 
-    
-        function renderItems() {
-            const lostList = document.getElementById('lostList');
-            const foundList = document.getElementById('foundList');
+      
+  
 
-            lostList.innerHTML = '';
-            foundList.innerHTML = '';
-
-            if (items.length === 0) {
-                lostList.innerHTML = '<p class="text-gray-500 italic">No lost items reported yet.</p>';
-                foundList.innerHTML = '<p class="text-gray-500 italic">No found items reported yet.</p>';
-                return;
-            }
-
-            items.forEach(item => {
-                const cardColor = item.type === 'lost' ? 'border-red-500' : 'border-green-500';
-                const statusColor = item.type === 'lost' ? 'text-orange-600' : 'text-green-600';
-
-                const cardHTML = `
-                    <div class="bg-white p-4 rounded shadow border-l-4 ${cardColor} mb-4">
-                        <div class="flex justify-between items-start">
-                            <h4 class="font-bold text-gray-800">${item.title}</h4>
-                            <span class="text-[10px] px-2 py-1 rounded bg-gray-100 font-bold uppercase">${item.category}</span>
-                        </div>
-                        <p class="text-sm text-gray-600 mt-1">📍 ${item.location}</p>
-                        <p class="text-xs text-blue-600 mt-2 font-medium">📞 Contact: ${item.contact}</p>
-                        <div class="flex gap-4 mt-2 text-[10px] text-gray-400">
-                            <span>📅 ${item.date}</span>
-                            <span>⏰ ${item.time}</span>
-                        </div>
-                        <p class="mt-3 text-sm font-semibold ${statusColor}">Status: ${item.status}</p>
-                    </div>
-                `;
-
-                if (item.type === 'lost') {
-                    lostList.innerHTML += cardHTML;
-                } else {
-                    foundList.innerHTML += cardHTML;
-                }
-            });
-        }
-
-                       
 
     </script>
 </body>
